@@ -1,0 +1,11 @@
+# Hemmeligheder må aldrig i git
+key.env
+*.env
+.env
+
+# Genereres af scripts
+data/dashboard/
+docs/
+dashboard/standalone.html
+dashboard/store/
+__pycache__/

@@ -1,0 +1,778 @@
+<meta name="dash-one-writer">
+<style>
+  .ds { display: flex; flex-direction: column; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); }
+  .ds-head { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+  .ds-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+  .ds-lede { margin: 0; max-width: 68ch; font-size: var(--cds-font-size-body); }
+  .ds .ds-lede b { font-weight: var(--cds-font-weight-medium); }
+  .ds-meta, .ds-note { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ds-section { display: flex; flex-direction: column; gap: var(--cds-gap-md); }
+  .ds-h2 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+  .ds-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: var(--cds-gap-md); }
+  .ds-tile, .ds-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); min-width: 0; }
+  .ds-tile { padding: var(--cds-pad-md); display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+  .ds-tile-label { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ds-tile-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; }
+  .ds-card { padding: var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+  .ds-card-title { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+  .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); }
+  .ds-chart { position: relative; min-height: 270px; min-width: 0; }
+  .ds-chart svg { display: block; }
+  .ds-tick { fill: var(--color-fg-muted); font-size: 12px; }
+  .ds-tip { position: absolute; top: 0; left: 0; display: none; pointer-events: none; z-index: 2; max-width: 15rem; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); }
+  .ds-tip-head { color: var(--cds-text-secondary); }
+  .ds-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); font-size: var(--cds-font-size-caption); padding-bottom: var(--cds-pad-xs); }
+  .ds-swatch { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; margin-right: .35rem; }
+  .ds-scroll { overflow-x: auto; min-width: 0; }
+  .ds-scroll-tall { max-height: 26rem; overflow: auto; }
+  .ds-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .ds-table th { text-align: right; font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); white-space: nowrap; border-bottom: 1px solid var(--color-border-line); position: sticky; top: 0; background: var(--color-panel); }
+  .ds-table td { text-align: right; padding: var(--cds-pad-xs) var(--cds-pad-sm); white-space: nowrap; border-bottom: 1px solid var(--color-border-line); }
+  .ds-table th:first-child, .ds-table td:first-child { text-align: left; }
+  .ds-table .ds-left { text-align: left; }
+  .ds-table tr:last-child td { border-bottom: 0; }
+  .ds-table td.ds-best { font-weight: var(--cds-font-weight-medium); color: var(--color-ok); }
+  .ds-win { color: var(--color-ok); font-weight: var(--cds-font-weight-medium); }
+  .ds-bars { display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-height: 270px; }
+  .ds-bar-row { display: grid; grid-template-columns: 5rem minmax(0, 1fr) 8.5rem; gap: var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .ds-bar-track { height: .75rem; background: var(--cds-chart-grid); border-radius: var(--cds-radius); overflow: hidden; }
+  .ds-bar-fill { height: 100%; border-radius: var(--cds-radius); }
+  .ds-bar-note { color: var(--color-fg-muted); text-align: right; }
+  .ds-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); }
+  .ds-date { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ds-input { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
+  .ds-reset { cursor: pointer; }
+  .ds-side { display: flex; flex-direction: column; gap: var(--cds-gap-xl); }
+  .ds-side[hidden] { display: none; }
+  .ds-tabs { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
+  .ds-tab { font: inherit; font-size: var(--cds-font-size-caption); cursor: pointer; color: var(--color-fg-muted); background: transparent; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
+  .ds-tab[aria-pressed=true] { color: var(--color-fg); background: var(--color-panel); font-weight: var(--cds-font-weight-medium); }
+  .ds-link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .ds-tile-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ds-details { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ds-details summary { cursor: pointer; }
+  .ds-details dl { margin: var(--cds-gap-sm) 0 0; display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr); gap: var(--cds-gap-xs) var(--cds-gap-md); max-width: 44rem; }
+  .ds-details dt { font-weight: var(--cds-font-weight-medium); }
+  .ds-details dd { margin: 0; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+</style>
+
+<div class="ds">
+  <header class="ds-head">
+    <h1 class="ds-title">DROP Squad Stats</h1>
+    <p class="ds-lede">Sammen alle fire har I spillet <b data-draw="f-kampe" data-source="team_matches">—</b> kampe, vundet <b data-draw="f-wins" data-source="team_matches">—</b> og nået top 10 i <b data-draw="f-top10-lede" data-source="team_matches">—</b> af dem. <b data-draw="top-spiller" data-source="match_players">—</b> laver mest skade pr. kamp.</p>
+    <p class="ds-meta">Kampe fra <span data-draw="fra" data-source="meta">—</span> til <span data-draw="til" data-source="meta">—</span> · Tal senest ændret <span data-draw="hentet" data-source="meta" data-field="hentet">—</span>.</p>
+    <div class="ds-controls" id="periode">
+      <label class="ds-date">Fra <input class="ds-input" id="ds-fra" type="date" min="2000-01-01" max="2099-12-31"></label>
+      <label class="ds-date">Til <input class="ds-input" id="ds-til" type="date" min="2000-01-01" max="2099-12-31"></label>
+      <button class="ds-input ds-reset" type="button">Hele perioden</button>
+    </div>
+    <p class="ds-note ds-omvendt" hidden>Fra-datoen ligger efter til-datoen. Ret en af dem for at se kampe.</p>
+    <p class="ds-note ds-ingen" hidden>Der er ingen kampe i den valgte periode.</p>
+  </header>
+
+  <nav class="ds-tabs" id="spillervalg" aria-label="Vælg hold eller spiller">
+    <button class="ds-tab" type="button" data-spiller="" aria-pressed="true">Holdet</button>
+    <button class="ds-tab" type="button" data-spiller="El-Champo" aria-pressed="false">El-Champo</button>
+    <button class="ds-tab" type="button" data-spiller="StrawberryBuun" aria-pressed="false">StrawberryBuun</button>
+    <button class="ds-tab" type="button" data-spiller="Abilden" aria-pressed="false">Abilden</button>
+    <button class="ds-tab" type="button" data-spiller="MountainEagle_12" aria-pressed="false">MountainEagle_12</button>
+  </nav>
+
+  <div class="ds-side" id="hold-side">
+  <section class="ds-section" id="holdet">
+    <h2 class="ds-h2">Holdet, når I er alle fire</h2>
+    <div class="ds-tiles">
+      <div class="ds-tile"><span class="ds-tile-label">Kampe</span><span class="ds-tile-value" data-draw="t-kampe" data-source="team_matches">—</span></div>
+      <div class="ds-tile"><span class="ds-tile-label">Wins</span><span class="ds-tile-value" data-draw="t-wins" data-source="team_matches">—</span></div>
+      <div class="ds-tile"><span class="ds-tile-label">Top 10-rate</span><span class="ds-tile-value" data-draw="t-top10" data-source="team_matches">—</span></div>
+      <div class="ds-tile"><span class="ds-tile-label">Snitplacering</span><span class="ds-tile-value" data-draw="t-plac" data-source="team_matches">—</span></div>
+      <div class="ds-tile"><span class="ds-tile-label">Holdkills pr. kamp</span><span class="ds-tile-value" data-draw="t-kills" data-source="team_matches">—</span></div>
+    </div>
+    <div class="ds-grid">
+      <div class="ds-card" id="placering">
+        <h3 class="ds-card-title">Placering kamp for kamp</h3>
+        <p class="ds-note">Hver prik er en kamp, ældste til venstre. Linjen er snittet af de seneste fem kampe, og feltet er top 10.</p>
+        <div class="ds-chart" data-draw="placering" data-source="team_matches"></div>
+      </div>
+      <div class="ds-card" id="kort">
+        <h3 class="ds-card-title">Top 10-rate pr. kort</h3>
+        <p class="ds-note">Kampe med alle fire. Få kampe på et kort giver usikre tal.</p>
+        <div class="ds-bars" data-draw="kort" data-source="team_matches"></div>
+      </div>
+    </div>
+    <div class="ds-card" id="opstillinger">
+      <h3 class="ds-card-title">Klarer I jer bedre fuldtallige?</h3>
+      <p class="ds-note">Alle kampe i perioden fordelt på, hvor mange af jer der var på holdet. Holdkills tæller også tilfældige medspillere.</p>
+      <div class="ds-scroll">
+        <table class="ds-table" data-source="team_matches">
+          <thead><tr>
+            <th>Opstilling</th><th>Kampe</th><th>Wins</th><th>Top 10</th><th>Snitplacering</th><th>Hold i kampen</th><th>Holdkills pr. kamp</th>
+          </tr></thead>
+          <tbody data-draw="opstillinger"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="ds-section" id="spillerne">
+    <h2 class="ds-h2">Spillerne i de samme kampe</h2>
+    <div class="ds-card" id="spillere">
+      <h3 class="ds-card-title">Hvem bidrager med hvad?</h3>
+      <p class="ds-note">Tal pr. kamp i de kampe, hvor I var alle fire. Bedste værdi i hver kolonne er markeret.</p>
+      <div class="ds-scroll">
+        <table class="ds-table" data-source="match_players">
+          <thead><tr>
+            <th>Spiller</th><th>Kills</th><th>Skade</th><th>Assists</th><th>Knocks</th><th>Revives</th><th>Overlevet (min)</th><th>Headshot-andel</th><th>Længste kill (m)</th>
+          </tr></thead>
+          <tbody data-draw="spillere"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="ds-card" id="dagsform">
+      <h3 class="ds-card-title">Skade pr. kamp, spilledag for spilledag</h3>
+      <p class="ds-note">Kun dage, hvor I spillede alle fire. Nogle dage bygger på få kampe.</p>
+      <div class="ds-chart" data-draw="dagsform" data-source="match_players"></div>
+    </div>
+  </section>
+
+  <section class="ds-section" id="karriere">
+    <h2 class="ds-h2">Karrieren</h2>
+    <div class="ds-card">
+      <h3 class="ds-card-title">Livstid og sæson</h3>
+      <p class="ds-note">Vælg periode og spilletilstand. Tallene her er PUBG's samlede tal og følger ikke datoerne øverst. K/D er kills delt med dødsfald i kampe, I ikke vandt. ADR er skade pr. kamp.</p>
+      <div class="ds-controls">
+        <select class="dash-select" id="ds-periode" aria-label="Periode">
+          <option value="lifetime">Livstid</option>
+          <option value="season">Denne sæson</option>
+        </select>
+        <select class="dash-select" id="ds-tilstand" aria-label="Spilletilstand">
+          <option value="all">Alle tilstande</option>
+          <option value="squad-fpp">Squad FPP</option>
+          <option value="squad">Squad TPP</option>
+          <option value="duo-fpp">Duo FPP</option>
+          <option value="duo">Duo TPP</option>
+          <option value="solo-fpp">Solo FPP</option>
+          <option value="solo">Solo TPP</option>
+        </select>
+      </div>
+      <div class="ds-scroll">
+        <table class="ds-table" data-source="player_stats" data-row-key="key">
+          <thead><tr>
+            <th data-field="spiller">Spiller</th><th data-field="kampe">Kampe</th><th data-field="kd">K/D</th><th data-field="adr">ADR</th><th data-field="wins">Wins</th><th data-field="win_pct">Win-rate</th><th data-field="top10_pct">Top 10</th><th data-field="kills">Kills</th><th data-field="hs_pct">Headshot-andel</th><th data-field="laengste_kill">Længste kill (m)</th><th data-field="timer">Timer</th>
+          </tr></thead>
+          <tbody data-draw="karriere"></tbody>
+        </table>
+      </div>
+      <p class="ds-note ds-tom" hidden>Ingen af jer har spillet den tilstand i den valgte periode.</p>
+    </div>
+  </section>
+
+  <section class="ds-section" id="kampene">
+    <h2 class="ds-h2">Alle kampe i perioden</h2>
+    <div class="ds-card">
+      <p class="ds-note">Nyeste først. Træningsbanen er ikke med.</p>
+      <div class="ds-scroll-tall">
+        <table class="ds-table" data-source="team_matches" data-row-key="id">
+          <thead><tr>
+            <th data-field="dato">Tidspunkt</th><th data-field="kort" class="ds-left">Kort</th><th data-field="tilstand" class="ds-left">Tilstand</th><th data-field="placering">Placering</th><th data-field="hold_i_alt">Hold</th><th data-field="hold_kills">Holdkills</th><th data-field="hold_skade">Holdskade</th><th data-field="varighed_min">Minutter</th><th data-field="spillere" class="ds-left">Med på holdet</th>
+          </tr></thead>
+          <tbody data-draw="kampe"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="ds-side" id="spiller-side" hidden>
+    <section class="ds-section" id="spiller">
+      <h2 class="ds-h2"><span data-draw="p-navn">—</span> i den valgte periode</h2>
+      <p class="ds-note">Alle spillerens kampe i perioden, også uden resten af holdet.</p>
+      <div class="ds-tiles">
+        <div class="ds-tile"><span class="ds-tile-label">Kampe</span><span class="ds-tile-value" data-draw="p-kampe" data-source="match_players">—</span></div>
+        <div class="ds-tile"><span class="ds-tile-label">Wins</span><span class="ds-tile-value" data-draw="p-wins" data-source="match_players">—</span></div>
+        <div class="ds-tile"><span class="ds-tile-label">Top 10-rate</span><span class="ds-tile-value" data-draw="p-top10" data-source="match_players">—</span></div>
+        <div class="ds-tile"><span class="ds-tile-label">Kills pr. kamp</span><span class="ds-tile-value" data-draw="p-kills" data-source="match_players">—</span><span class="ds-tile-sub">Snit for jer fire: <span data-draw="p-kills-hold" data-source="match_players">—</span></span></div>
+        <div class="ds-tile"><span class="ds-tile-label">Skade pr. kamp</span><span class="ds-tile-value" data-draw="p-skade" data-source="match_players">—</span><span class="ds-tile-sub">Snit for jer fire: <span data-draw="p-skade-hold" data-source="match_players">—</span></span></div>
+      </div>
+      <div class="ds-grid">
+        <div class="ds-card" id="spiller-skade">
+          <h3 class="ds-card-title">Skade kamp for kamp</h3>
+          <p class="ds-note">Hver prik er en kamp, ældste til venstre. Linjen er snittet af de seneste fem kampe.</p>
+          <div class="ds-chart" data-draw="p-skadegraf" data-source="match_players"></div>
+        </div>
+        <div class="ds-card" id="spiller-kort">
+          <h3 class="ds-card-title">Pr. kort</h3>
+          <p class="ds-note">Få kampe på et kort giver usikre tal.</p>
+          <div class="ds-scroll">
+            <table class="ds-table" data-source="match_players">
+              <thead><tr><th>Kort</th><th>Kampe</th><th>Wins</th><th>Top 10</th><th>Kills pr. kamp</th><th>Skade pr. kamp</th></tr></thead>
+              <tbody data-draw="p-kort"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="ds-card" id="spiller-karriere">
+        <h3 class="ds-card-title">Karriere pr. spilletilstand</h3>
+        <p class="ds-note">PUBG's samlede tal. De følger ikke datoerne øverst.</p>
+        <div class="ds-scroll">
+          <table class="ds-table" data-source="player_stats" data-row-key="key">
+            <thead><tr>
+              <th data-field="periode">Periode</th><th data-field="tilstand" class="ds-left">Tilstand</th><th data-field="kampe">Kampe</th><th data-field="kd">K/D</th><th data-field="adr">ADR</th><th data-field="wins">Wins</th><th data-field="win_pct">Win-rate</th><th data-field="top10_pct">Top 10</th><th data-field="kills">Kills</th><th data-field="hs_pct">Headshot-andel</th><th data-field="laengste_kill">Længste kill (m)</th><th data-field="timer">Timer</th>
+            </tr></thead>
+            <tbody data-draw="p-karriere"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ds-card" id="spiller-kampe">
+        <h3 class="ds-card-title">Spillerens kampe</h3>
+        <p class="ds-note">Nyeste først. Af jer viser, hvor mange af jer der var på holdet.</p>
+        <div class="ds-scroll-tall">
+          <table class="ds-table" data-source="match_players" data-row-key="key">
+            <thead><tr>
+              <th data-field="dato">Tidspunkt</th><th data-field="kort" class="ds-left">Kort</th><th data-field="placering">Placering</th><th data-field="kills">Kills</th><th data-field="assists">Assists</th><th data-field="knocks">Knocks</th><th data-field="skade">Skade</th><th data-field="overlevet_min">Overlevet (min)</th><th data-field="laengste_kill">Længste kill (m)</th><th data-field="antal_af_os">Af jer</th>
+            </tr></thead>
+            <tbody data-draw="p-kampliste"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <details class="ds-details">
+    <summary>Sådan læses tallene</summary>
+    <dl>
+      <dt>Kampe i perioden</dt><dd>PUBG gemmer kun kampe i 14 dage. Ældre kampe kommer kun med, hvis de er hentet, mens de stadig fandtes.</dd>
+      <dt>Win</dt><dd>Holdet blev nummer 1 i kampen.</dd>
+      <dt>Snitplacering</dt><dd>Lavere er bedre. Duo- og squadkampe har ikke lige mange hold, så sammenlign med kolonnen Hold i kampen.</dd>
+      <dt>Livstid og sæson</dt><dd>PUBG's egne tal. De omfatter almindelige kampe og kan ligge lidt efter de allernyeste kampe.</dd>
+      <dt>Ikke med</dt><dd>Ranked: PUBG returnerede ingen ranked-tal for jer i denne sæson. Bots: kills og placeringer kan omfatte bots i kampene.</dd>
+    </dl>
+  </details>
+</div>
+
+<script>
+  d3.formatDefaultLocale({decimal: ',', thousands: '.', grouping: [3], currency: ['', ' kr.']});
+  const int = d3.format(',');
+  const helt = (v) => int(Math.round(v));
+  const d1 = d3.format('.1f');
+  const d2 = d3.format('.2f');
+  const pct = (v) => d3.format('.1f')(v * 100) + ' %';
+  const TZ = 'Europe/Copenhagen';
+  const datoKort = (s) => new Intl.DateTimeFormat('da', {day: 'numeric', month: 'short', timeZone: TZ}).format(new Date(s));
+  const datoTid = (s) => new Intl.DateTimeFormat('da', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: TZ}).format(new Date(s));
+  const SPILLERE = ['El-Champo', 'StrawberryBuun', 'Abilden', 'MountainEagle_12'];
+  const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const fraLink = SPILLERE.find((s) => slug(s) === location.hash.slice(1));
+  if (fraLink) dash.setParams({spiller: fraLink});
+  const ROLL = 5;
+  const TOP = 10;
+
+  const calc_fire = (team_matches) => {
+      const r = team_matches.filter((t) => t.antal_af_os === 4);
+      const n = r.length;
+      return [{
+        kampe: n,
+        wins: r.filter((t) => t.vundet).length,
+        top10_pct: n ? +(r.filter((t) => t.placering <= 10).length / n).toFixed(4) : null,
+        snit_placering: n ? +(r.reduce((a, t) => a + t.placering, 0) / n).toFixed(1) : null,
+        kills_pr_kamp: n ? +(r.reduce((a, t) => a + t.hold_kills, 0) / n).toFixed(1) : null,
+      }];
+  };
+
+  const calc_opstillinger = (team_matches) => {
+      const grupper = [
+        ['Alle fire', (t) => t.antal_af_os === 4],
+        ['Tre af jer i squad', (t) => t.antal_af_os === 3 && t.mode === 'squad'],
+        ['To af jer i squad', (t) => t.antal_af_os === 2 && t.mode === 'squad'],
+        ['Duo', (t) => t.mode === 'duo'],
+        ['Solo', (t) => t.mode === 'solo'],
+      ];
+      return grupper.map(([opstilling, test]) => {
+        const r = team_matches.filter(test);
+        const n = r.length || 1;
+        return {
+          opstilling,
+          kampe: r.length,
+          wins: r.filter((t) => t.vundet).length,
+          top10_pct: +(r.filter((t) => t.placering <= 10).length / n).toFixed(4),
+          snit_placering: +(r.reduce((a, t) => a + t.placering, 0) / n).toFixed(1),
+          snit_hold: +(r.reduce((a, t) => a + t.hold_i_alt, 0) / n).toFixed(1),
+          kills_pr_kamp: +(r.reduce((a, t) => a + t.hold_kills, 0) / n).toFixed(1),
+        };
+      }).filter((g) => g.kampe > 0);
+  };
+
+  const calc_kort_stats = (team_matches) => {
+      const m = new Map();
+      team_matches.filter((t) => t.antal_af_os === 4).forEach((t) => {
+        if (!m.has(t.kort)) m.set(t.kort, []);
+        m.get(t.kort).push(t);
+      });
+      return [...m].map(([kort, r]) => ({
+        kort,
+        kampe: r.length,
+        wins: r.filter((t) => t.vundet).length,
+        top10_pct: +(r.filter((t) => t.placering <= 10).length / r.length).toFixed(4),
+        snit_placering: +(r.reduce((a, t) => a + t.placering, 0) / r.length).toFixed(1),
+      })).sort((a, b) => b.kampe - a.kampe);
+  };
+
+  const calc_spillere14 = (match_players) => {
+      const m = new Map();
+      match_players.filter((p) => p.antal_af_os === 4).forEach((p) => {
+        if (!m.has(p.spiller)) m.set(p.spiller, []);
+        m.get(p.spiller).push(p);
+      });
+      const snit = (r, f, c) => +(r.reduce((a, p) => a + p[f], 0) / r.length).toFixed(c);
+      return [...m].map(([spiller, r]) => {
+        const kills = r.reduce((a, p) => a + p.kills, 0);
+        const hs = r.reduce((a, p) => a + p.headshots, 0);
+        return {
+          spiller,
+          kampe: r.length,
+          kills: snit(r, 'kills', 2),
+          skade: snit(r, 'skade', 0),
+          assists: snit(r, 'assists', 2),
+          knocks: snit(r, 'knocks', 2),
+          revives: snit(r, 'revives', 2),
+          overlevet_min: snit(r, 'overlevet_min', 1),
+          hs_pct: kills ? +(hs / kills).toFixed(4) : 0,
+          laengste_kill: Math.max(...r.map((p) => p.laengste_kill)),
+        };
+      }).sort((a, b) => b.skade - a.skade);
+  };
+
+  const calc_dagsform = (match_players) => {
+      const m = new Map();
+      match_players.filter((p) => p.antal_af_os === 4).forEach((p) => {
+        const dag = new Date(p.dato).toLocaleDateString('sv-SE', {timeZone: 'Europe/Copenhagen'});
+        const k = dag + '|' + p.spiller;
+        if (!m.has(k)) m.set(k, {key: k, dag, spiller: p.spiller, kampe: 0, sum: 0});
+        const e = m.get(k);
+        e.kampe += 1;
+        e.sum += p.skade;
+      });
+      return [...m.values()].map((e) => ({key: e.key, dag: e.dag, spiller: e.spiller, kampe: e.kampe, skade_pr_kamp: Math.round(e.sum / e.kampe)})).sort((a, b) => a.dag.localeCompare(b.dag));
+  };
+
+  const raekker = (kilde) => {
+    const g = dash.data(kilde);
+    return g.status === 'ok' ? g.data : [];
+  };
+  const dagCache = new Map();
+  const dagDK = (s) => {
+    if (!dagCache.has(s)) dagCache.set(s, new Date(s).toLocaleDateString('sv-SE', {timeZone: TZ}));
+    return dagCache.get(s);
+  };
+  const iPeriode = (rows) => {
+    const {fra, til} = dash.params();
+    return rows.filter((r) => {
+      const d = dagDK(r.dato);
+      return (!fra || d >= fra) && (!til || d <= til);
+    });
+  };
+  const valgt = () => {
+    const m = raekker('meta')[0];
+    const p = dash.params();
+    return m ? {fra: p.fra ?? dagDK(m.foerste_kamp), til: p.til ?? dagDK(m.seneste_kamp)} : null;
+  };
+  const hold = () => iPeriode(raekker('team_matches'));
+  const spillerRaekker = () => iPeriode(raekker('match_players'));
+  const fire = () => calc_fire(hold());
+  const spillere14 = () => calc_spillere14(spillerRaekker());
+
+  const vaerdi = (navn, hent, felt, fmt) => dash.draw(navn, (el) => {
+    const r = hent()[0];
+    el.textContent = r && r[felt] != null ? fmt(r[felt]) : '—';
+  });
+  const dagsTekst = (d) => datoKort(d + 'T12:00:00Z');
+  vaerdi('f-kampe', fire, 'kampe', int);
+  vaerdi('f-wins', fire, 'wins', int);
+  vaerdi('f-top10-lede', fire, 'top10_pct', pct);
+  vaerdi('t-kampe', fire, 'kampe', int);
+  vaerdi('t-wins', fire, 'wins', int);
+  vaerdi('t-top10', fire, 'top10_pct', pct);
+  vaerdi('t-plac', fire, 'snit_placering', d1);
+  vaerdi('t-kills', fire, 'kills_pr_kamp', d1);
+  vaerdi('fra', () => [valgt() ?? {}], 'fra', dagsTekst);
+  vaerdi('til', () => [valgt() ?? {}], 'til', dagsTekst);
+  vaerdi('hentet', () => raekker('meta'), 'hentet', datoTid);
+  vaerdi('top-spiller', spillere14, 'spiller', (v) => v);
+
+  const valgtSpiller = () => dash.params().spiller ?? null;
+  const mineKampe = () => spillerRaekker().filter((r) => r.spiller === valgtSpiller());
+  const spillerSnit = (rows) => {
+    const n = rows.length;
+    const sum = (f) => rows.reduce((a, r) => a + r[f], 0);
+    return [{
+      kampe: n,
+      wins: rows.filter((r) => r.vundet).length,
+      top10_pct: n ? rows.filter((r) => r.placering <= TOP).length / n : null,
+      kills: n ? sum('kills') / n : null,
+      skade: n ? sum('skade') / n : null,
+    }];
+  };
+  const mit = () => spillerSnit(mineKampe());
+  const holdSnit = () => spillerSnit(spillerRaekker());
+  dash.draw('p-navn', (el) => { el.textContent = valgtSpiller() ?? '—'; });
+  vaerdi('p-kampe', mit, 'kampe', int);
+  vaerdi('p-wins', mit, 'wins', int);
+  vaerdi('p-top10', mit, 'top10_pct', pct);
+  vaerdi('p-kills', mit, 'kills', d2);
+  vaerdi('p-skade', mit, 'skade', helt);
+  vaerdi('p-kills-hold', holdSnit, 'kills', d2);
+  vaerdi('p-skade-hold', holdSnit, 'skade', helt);
+
+  const vaelg = (navn) => {
+    dash.setParams({spiller: navn || null});
+    dash.setLink(navn ? slug(navn) : 'holdet');
+    document.querySelectorAll('#spillervalg').forEach((n) => n.scrollIntoView());
+  };
+  document.querySelectorAll('.ds').forEach((rod) => rod.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-spiller]');
+    if (b) vaelg(b.dataset.spiller);
+  }));
+
+  const visPeriode = () => {
+    const sp = valgtSpiller();
+    document.querySelectorAll('#hold-side, .ds-lede').forEach((n) => { n.hidden = !!sp; });
+    document.querySelectorAll('#spiller-side').forEach((n) => { n.hidden = !sp; });
+    document.querySelectorAll('.ds-tab').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.spiller || null) === sp)));
+    const v = valgt();
+    document.querySelectorAll('#ds-fra').forEach((i) => { if (i !== document.activeElement) i.value = v ? v.fra : ''; });
+    document.querySelectorAll('#ds-til').forEach((i) => { if (i !== document.activeElement) i.value = v ? v.til : ''; });
+    const klar = dash.data('team_matches').status === 'ok' && v;
+    const omvendt = !!(klar && v.fra > v.til);
+    document.querySelectorAll('.ds-omvendt').forEach((n) => { n.hidden = !omvendt; });
+    document.querySelectorAll('.ds-ingen').forEach((n) => { n.hidden = !klar || omvendt || (sp ? mineKampe() : hold()).length > 0; });
+  };
+  [['#ds-fra', 'fra'], ['#ds-til', 'til']].forEach(([vaelger, navn]) => document.querySelectorAll(vaelger).forEach((i) => {
+    i.addEventListener('change', () => {
+      if (i.value && i.validity.valid) dash.setParams({[navn]: i.value});
+    });
+    i.addEventListener('blur', visPeriode);
+  }));
+  document.querySelectorAll('.ds-reset').forEach((b) => b.addEventListener('click', () => dash.setParams({fra: null, til: null})));
+  dash.onData(visPeriode);
+
+  const celle = (tr, tekst, klasse) => {
+    const td = document.createElement('td');
+    td.textContent = tekst;
+    if (klasse) td.className = klasse;
+    tr.append(td);
+  };
+  const navneCelle = (tr, navn) => {
+    const td = document.createElement('td');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ds-link';
+    b.dataset.spiller = navn;
+    b.textContent = navn;
+    td.append(b);
+    tr.append(td);
+  };
+  const tip = (box) => {
+    const t = document.createElement('div');
+    t.className = 'ds-tip';
+    box.append(t);
+    return (x, y, linjer) => {
+      if (!linjer) { t.style.display = 'none'; return; }
+      t.replaceChildren(...linjer.map((l, i) => {
+        const d = document.createElement('div');
+        if (!i) d.className = 'ds-tip-head';
+        d.textContent = l;
+        return d;
+      }));
+      t.style.display = 'block';
+      const w = t.offsetWidth;
+      const left = Math.min(Math.max(0, x + 12), box.clientWidth - w);
+      t.style.transform = `translate(${left}px, ${Math.max(0, y - 10)}px)`;
+    };
+  };
+
+  dash.draw('opstillinger', (el) => {
+    el.replaceChildren(...calc_opstillinger(hold()).map((r) => {
+      const tr = document.createElement('tr');
+      celle(tr, r.opstilling);
+      celle(tr, int(r.kampe));
+      celle(tr, int(r.wins));
+      celle(tr, pct(r.top10_pct));
+      celle(tr, d1(r.snit_placering));
+      celle(tr, d1(r.snit_hold));
+      celle(tr, d1(r.kills_pr_kamp));
+      return tr;
+    }));
+  });
+
+  dash.draw('spillere', (el) => {
+    const rows = spillere14();
+    const bedst = (f) => d3.max(rows, (r) => r[f]);
+    const c = (tr, r, f, fmt) => celle(tr, fmt(r[f]), r[f] === bedst(f) ? 'ds-best' : '');
+    el.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr');
+      navneCelle(tr, r.spiller);
+      c(tr, r, 'kills', d2);
+      c(tr, r, 'skade', int);
+      c(tr, r, 'assists', d2);
+      c(tr, r, 'knocks', d2);
+      c(tr, r, 'revives', d2);
+      c(tr, r, 'overlevet_min', d1);
+      c(tr, r, 'hs_pct', pct);
+      c(tr, r, 'laengste_kill', int);
+      return tr;
+    }));
+  });
+
+  let periode = 'lifetime';
+  let tilstand = 'all';
+  document.querySelectorAll('#ds-periode').forEach((s) => s.addEventListener('change', () => { periode = s.value; dash.draw('karriere'); }));
+  document.querySelectorAll('#ds-tilstand').forEach((s) => s.addEventListener('change', () => { tilstand = s.value; dash.draw('karriere'); }));
+
+  dash.draw('karriere', (el) => {
+    const g = dash.data('player_stats');
+    const rows = (g.status === 'ok' ? g.data : []).filter((r) => r.scope === periode && r.mode === tilstand)
+      .sort((a, b) => b.kd - a.kd);
+    document.querySelectorAll('.ds-tom').forEach((n) => { n.hidden = g.status !== 'ok' || rows.length > 0; });
+    el.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.key;
+      navneCelle(tr, r.spiller);
+      celle(tr, int(r.kampe));
+      celle(tr, d2(r.kd));
+      celle(tr, d1(r.adr));
+      celle(tr, int(r.wins));
+      celle(tr, pct(r.win_pct));
+      celle(tr, pct(r.top10_pct));
+      celle(tr, int(r.kills));
+      celle(tr, pct(r.hs_pct));
+      celle(tr, int(r.laengste_kill));
+      celle(tr, d1(r.timer));
+      return tr;
+    }));
+  });
+
+  dash.draw('kampe', (el) => {
+    el.replaceChildren(...hold().map((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.id;
+      celle(tr, datoTid(r.dato));
+      celle(tr, r.kort, 'ds-left');
+      celle(tr, r.tilstand, 'ds-left');
+      celle(tr, int(r.placering), r.vundet ? 'ds-win' : '');
+      celle(tr, int(r.hold_i_alt));
+      celle(tr, int(r.hold_kills));
+      celle(tr, int(r.hold_skade));
+      celle(tr, int(r.varighed_min));
+      celle(tr, r.spillere, 'ds-left');
+      return tr;
+    }));
+  });
+
+  dash.draw('kort', (el) => {
+    el.replaceChildren(...calc_kort_stats(hold()).map((r) => {
+      const row = document.createElement('div');
+      row.className = 'ds-bar-row';
+      const navn = document.createElement('span');
+      navn.textContent = r.kort;
+      const spor = document.createElement('div');
+      spor.className = 'ds-bar-track';
+      const fyld = document.createElement('div');
+      fyld.className = 'ds-bar-fill';
+      fyld.style.width = (r.top10_pct * 100) + '%';
+      fyld.style.background = dash.colors[0];
+      spor.append(fyld);
+      const note = document.createElement('span');
+      note.className = 'ds-bar-note';
+      note.textContent = `${pct(r.top10_pct)} · ${int(r.kampe)} kampe`;
+      row.append(navn, spor, note);
+      return row;
+    }));
+  });
+
+  dash.draw('placering', (el) => {
+    const rows = hold().filter((r) => r.antal_af_os === 4).slice().reverse();
+    if (!rows.length) { el.replaceChildren(); return; }
+    const W = el.clientWidth || 640;
+    const H = 270;
+    const m = {t: 10, r: 12, b: 26, l: 30};
+    const maks = d3.max(rows, (r) => r.placering);
+    const x = d3.scaleLinear([0, rows.length - 1], [m.l, W - m.r]);
+    const y = d3.scaleLinear([1, maks], [m.t, H - m.b]);
+    const snit = rows.map((_, i) => {
+      const u = rows.slice(Math.max(0, i - ROLL + 1), i + 1);
+      return {i, v: d3.mean(u, (r) => r.placering)};
+    });
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Placering i hver kamp med alle fire');
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', y(1) - 4).attr('height', y(TOP) - y(1) + 4)
+      .style('fill', 'var(--cds-chart-grid)').style('opacity', .6);
+    [...new Set([1, TOP, 20, maks])].filter((v) => v <= maks).forEach((v) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(v)).attr('y2', y(v)).style('stroke', 'var(--cds-chart-grid)');
+      svg.append('text').attr('class', 'ds-tick').attr('x', m.l - 6).attr('y', y(v) + 4).attr('text-anchor', 'end').text(v);
+    });
+    let sidst = -Infinity;
+    let dag = '';
+    rows.forEach((r, i) => {
+      const d = datoKort(r.dato);
+      if (d !== dag && x(i) - sidst > 54 && x(i) < W - 30) {
+        svg.append('text').attr('class', 'ds-tick').attr('x', x(i)).attr('y', H - 6).attr('text-anchor', i ? 'middle' : 'start').text(d);
+        sidst = x(i);
+      }
+      dag = d;
+    });
+    svg.append('path').datum(snit).attr('fill', 'none').attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
+      .style('stroke', dash.colors[0]).attr('d', d3.line().x((d) => x(d.i)).y((d) => y(d.v)));
+    svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', (_, i) => x(i)).attr('cy', (r) => y(r.placering))
+      .attr('r', (r) => (r.vundet ? 5 : 3)).style('fill', (r) => (r.vundet ? 'var(--color-ok)' : 'var(--cds-chart-muted)'));
+    const vis = (() => { el.replaceChildren(svg.node()); return tip(el); })();
+    svg.on('pointermove', (e) => {
+      const [px, py] = d3.pointer(e, el);
+      const skala = W / el.clientWidth;
+      const i = rows.length < 2 ? 0 : Math.max(0, Math.min(rows.length - 1, Math.round(x.invert(px * skala))));
+      const r = rows[i];
+      vis(px, py, [datoTid(r.dato), `${r.kort}: nr. ${r.placering} af ${r.hold_i_alt}`, `${r.hold_kills} holdkills`]);
+    }).on('pointerleave', () => vis(0, 0, null));
+  });
+
+  dash.draw('dagsform', (el) => {
+    const rows = calc_dagsform(spillerRaekker());
+    if (!rows.length) { el.replaceChildren(); return; }
+    const W = el.clientWidth || 640;
+    const H = 240;
+    const m = {t: 10, r: 32, b: 26, l: 40};
+    const dage = [...new Set(rows.map((r) => r.dag))];
+    const x = d3.scalePoint(dage, [m.l, W - m.r]);
+    const y = d3.scaleLinear([0, d3.max(rows, (r) => r.skade_pr_kamp)], [H - m.b, m.t]).nice();
+    const farve = (s) => dash.colors[SPILLERE.indexOf(s)];
+    const legend = document.createElement('div');
+    legend.className = 'ds-legend';
+    SPILLERE.forEach((s) => {
+      const e = document.createElement('span');
+      const p = document.createElement('i');
+      p.className = 'ds-swatch';
+      p.style.background = farve(s);
+      e.append(p, s);
+      legend.append(e);
+    });
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Skade pr. kamp pr. spilledag for hver spiller');
+    y.ticks(4).forEach((v) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(v)).attr('y2', y(v)).style('stroke', 'var(--cds-chart-grid)');
+      svg.append('text').attr('class', 'ds-tick').attr('x', m.l - 6).attr('y', y(v) + 4).attr('text-anchor', 'end').text(int(v));
+    });
+    const trin = Math.ceil(dage.length / Math.max(1, Math.floor((W - m.l - m.r) / 60)));
+    dage.forEach((d, i) => {
+      if (i % trin) return;
+      svg.append('text').attr('class', 'ds-tick').attr('x', x(d)).attr('y', H - 6).attr('text-anchor', i ? 'middle' : 'start').text(datoKort(d + 'T12:00:00Z'));
+    });
+    SPILLERE.forEach((s) => {
+      const r = rows.filter((p) => p.spiller === s);
+      svg.append('path').datum(r).attr('fill', 'none').attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
+        .style('stroke', farve(s)).attr('d', d3.line().x((p) => x(p.dag)).y((p) => y(p.skade_pr_kamp)));
+      svg.append('g').selectAll('circle').data(r).join('circle').attr('cx', (p) => x(p.dag)).attr('cy', (p) => y(p.skade_pr_kamp)).attr('r', 3).style('fill', farve(s));
+    });
+    el.replaceChildren(legend, svg.node());
+    const vis = tip(el);
+    svg.on('pointermove', (e) => {
+      const [px, py] = d3.pointer(e, el);
+      const skala = W / el.clientWidth;
+      const dag = dage.reduce((a, d) => (Math.abs(x(d) - px * skala) < Math.abs(x(a) - px * skala) ? d : a), dage[0]);
+      const r = rows.filter((p) => p.dag === dag).sort((a, b) => b.skade_pr_kamp - a.skade_pr_kamp);
+      vis(px, py, [`${datoKort(dag + 'T12:00:00Z')}, ${r[0].kampe} kampe`, ...r.map((p) => `${p.spiller}: ${int(p.skade_pr_kamp)}`)]);
+    }).on('pointerleave', () => vis(0, 0, null));
+  });
+
+  dash.draw('p-kort', (el) => {
+    const m = d3.group(mineKampe(), (r) => r.kort);
+    const rows = [...m].map(([kort, r]) => ({kort, ...spillerSnit(r)[0]})).sort((a, b) => b.kampe - a.kampe);
+    el.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr');
+      celle(tr, r.kort);
+      celle(tr, int(r.kampe));
+      celle(tr, int(r.wins));
+      celle(tr, pct(r.top10_pct));
+      celle(tr, d2(r.kills));
+      celle(tr, helt(r.skade));
+      return tr;
+    }));
+  });
+
+  dash.draw('p-karriere', (el) => {
+    const rows = raekker('player_stats').filter((r) => r.spiller === valgtSpiller())
+      .sort((a, b) => d3.ascending(a.scope, b.scope) || d3.descending(a.mode === 'all', b.mode === 'all') || b.kampe - a.kampe);
+    el.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.key;
+      celle(tr, r.periode);
+      celle(tr, r.tilstand, 'ds-left');
+      celle(tr, int(r.kampe));
+      celle(tr, d2(r.kd));
+      celle(tr, d1(r.adr));
+      celle(tr, int(r.wins));
+      celle(tr, pct(r.win_pct));
+      celle(tr, pct(r.top10_pct));
+      celle(tr, int(r.kills));
+      celle(tr, pct(r.hs_pct));
+      celle(tr, int(r.laengste_kill));
+      celle(tr, d1(r.timer));
+      return tr;
+    }));
+  });
+
+  dash.draw('p-kampliste', (el) => {
+    el.replaceChildren(...mineKampe().map((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.key;
+      celle(tr, datoTid(r.dato));
+      celle(tr, r.kort, 'ds-left');
+      celle(tr, int(r.placering), r.vundet ? 'ds-win' : '');
+      celle(tr, int(r.kills));
+      celle(tr, int(r.assists));
+      celle(tr, int(r.knocks));
+      celle(tr, int(r.skade));
+      celle(tr, d1(r.overlevet_min));
+      celle(tr, int(r.laengste_kill));
+      celle(tr, int(r.antal_af_os));
+      return tr;
+    }));
+  });
+
+  dash.draw('p-skadegraf', (el) => {
+    const rows = mineKampe().slice().reverse();
+    if (!rows.length) { el.replaceChildren(); return; }
+    const farve = dash.colors[SPILLERE.indexOf(valgtSpiller())];
+    const W = el.clientWidth || 640;
+    const H = 270;
+    const m = {t: 10, r: 12, b: 26, l: 40};
+    const x = d3.scaleLinear([0, Math.max(1, rows.length - 1)], [m.l, W - m.r]);
+    const y = d3.scaleLinear([0, d3.max(rows, (r) => r.skade) || 1], [H - m.b, m.t]).nice();
+    const snit = rows.map((_, i) => ({i, v: d3.mean(rows.slice(Math.max(0, i - ROLL + 1), i + 1), (r) => r.skade)}));
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Skade i hver kamp');
+    y.ticks(4).forEach((v) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(v)).attr('y2', y(v)).style('stroke', 'var(--cds-chart-grid)');
+      svg.append('text').attr('class', 'ds-tick').attr('x', m.l - 6).attr('y', y(v) + 4).attr('text-anchor', 'end').text(int(v));
+    });
+    let sidst = -Infinity;
+    let dag = '';
+    rows.forEach((r, i) => {
+      const d = datoKort(r.dato);
+      if (d !== dag && x(i) - sidst > 54 && x(i) < W - 30) {
+        svg.append('text').attr('class', 'ds-tick').attr('x', x(i)).attr('y', H - 6).attr('text-anchor', i ? 'middle' : 'start').text(d);
+        sidst = x(i);
+      }
+      dag = d;
+    });
+    svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', (_, i) => x(i)).attr('cy', (r) => y(r.skade)).attr('r', 3)
+      .style('fill', 'var(--cds-chart-muted)');
+    svg.append('path').datum(snit).attr('fill', 'none').attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
+      .style('stroke', farve).attr('d', d3.line().x((d) => x(d.i)).y((d) => y(d.v)));
+    el.replaceChildren(svg.node());
+    const vis = tip(el);
+    svg.on('pointermove', (e) => {
+      const [px, py] = d3.pointer(e, el);
+      const i = Math.max(0, Math.min(rows.length - 1, Math.round(x.invert(px * (W / el.clientWidth)))));
+      const r = rows[i];
+      vis(px, py, [datoTid(r.dato), `${r.kort}: nr. ${r.placering}`, `${int(r.skade)} skade, ${r.kills} kills`]);
+    }).on('pointerleave', () => vis(0, 0, null));
+  });
+</script>

@@ -1,0 +1,55 @@
+name: Opdater stats
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: stats
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Hent stats fra PUBG
+        run: python fetch_stats.py
+        env:
+          PUBG_API_KEY: ${{ secrets.PUBG_API_KEY }}
+      - name: Byg siden
+        run: |
+          python build_dashboard_data.py
+          python build_standalone.py
+      - name: Gem nye data
+        id: save
+        run: |
+          git add data
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Opdater stats"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.save.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        with:
+          path: docs
+      - uses: actions/deploy-pages@v4
+        id: deploy
+        if: steps.save.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
