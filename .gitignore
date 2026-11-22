@@ -9,3 +9,6 @@ docs/
 dashboard/standalone.html
 dashboard/store/
 __pycache__/
+
+# Lokale Claude-indstillinger
+.claude/

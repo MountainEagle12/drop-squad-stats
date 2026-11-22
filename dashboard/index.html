@@ -60,7 +60,7 @@
 <div class="ds">
   <header class="ds-head">
     <h1 class="ds-title">DROP Squad Stats</h1>
-    <p class="ds-lede">Sammen alle fire har I spillet <b data-draw="f-kampe" data-source="team_matches">—</b> kampe, vundet <b data-draw="f-wins" data-source="team_matches">—</b> og nået top 10 i <b data-draw="f-top10-lede" data-source="team_matches">—</b> af dem. <b data-draw="top-spiller" data-source="match_players">—</b> laver mest skade pr. kamp.</p>
+    <p class="ds-lede"><span class="ds-v" data-v="4">Sammen alle fire har I</span><span class="ds-v" data-v="3" hidden>Med mindst tre af jer på holdet har I</span><span class="ds-v" data-v="alle" hidden>I alt har I</span> spillet <b data-draw="f-kampe" data-source="team_matches">—</b> kampe, vundet <b data-draw="f-wins" data-source="team_matches">—</b> og nået top 10 i <b data-draw="f-top10-lede" data-source="team_matches">—</b> af dem. <b data-draw="top-spiller" data-source="match_players">—</b> laver mest skade pr. kamp.</p>
     <p class="ds-meta">Kampe fra <span data-draw="fra" data-source="meta">—</span> til <span data-draw="til" data-source="meta">—</span> · Tal senest ændret <span data-draw="hentet" data-source="meta" data-field="hentet">—</span>.</p>
     <div class="ds-controls" id="periode">
       <label class="ds-date">Fra <input class="ds-input" id="ds-fra" type="date" min="2000-01-01" max="2099-12-31"></label>
@@ -81,7 +81,13 @@
 
   <div class="ds-side" id="hold-side">
   <section class="ds-section" id="holdet">
-    <h2 class="ds-h2">Holdet, når I er alle fire</h2>
+    <h2 class="ds-h2">Holdet, <span class="ds-v" data-v="4">når I er alle fire</span><span class="ds-v" data-v="3" hidden>når mindst tre af jer er med</span><span class="ds-v" data-v="alle" hidden>i alle kampe</span></h2>
+    <div class="ds-tabs" role="group" aria-label="Vælg hvilke kampe der tælles med">
+      <button class="ds-tab" type="button" data-hold="4" aria-pressed="true">Alle fire</button>
+      <button class="ds-tab" type="button" data-hold="3" aria-pressed="false">Mindst tre af jer</button>
+      <button class="ds-tab" type="button" data-hold="alle" aria-pressed="false">Alle kampe</button>
+    </div>
+    <p class="ds-note ds-v" data-v="alle" hidden>Alle kampe blander squad, duo og solo. Der er flere hold i duo og solo, så placeringer kan ikke sammenlignes direkte.</p>
     <div class="ds-tiles">
       <div class="ds-tile"><span class="ds-tile-label">Kampe</span><span class="ds-tile-value" data-draw="t-kampe" data-source="team_matches">—</span></div>
       <div class="ds-tile"><span class="ds-tile-label">Wins</span><span class="ds-tile-value" data-draw="t-wins" data-source="team_matches">—</span></div>
@@ -97,7 +103,7 @@
       </div>
       <div class="ds-card" id="kort">
         <h3 class="ds-card-title">Top 10-rate pr. kort</h3>
-        <p class="ds-note">Kampe med alle fire. Få kampe på et kort giver usikre tal.</p>
+        <p class="ds-note">Kampene i dit valg ovenfor. Få kampe på et kort giver usikre tal.</p>
         <div class="ds-bars" data-draw="kort" data-source="team_matches"></div>
       </div>
     </div>
@@ -119,11 +125,11 @@
     <h2 class="ds-h2">Spillerne i de samme kampe</h2>
     <div class="ds-card" id="spillere">
       <h3 class="ds-card-title">Hvem bidrager med hvad?</h3>
-      <p class="ds-note">Tal pr. kamp i de kampe, hvor I var alle fire. Bedste værdi i hver kolonne er markeret.</p>
+      <p class="ds-note">Tal pr. kamp i kampene i dit valg ovenfor. Bedste værdi i hver kolonne er markeret.</p>
       <div class="ds-scroll">
         <table class="ds-table" data-source="match_players">
           <thead><tr>
-            <th>Spiller</th><th>Kills</th><th>Skade</th><th>Assists</th><th>Knocks</th><th>Revives</th><th>Overlevet (min)</th><th>Headshot-andel</th><th>Længste kill (m)</th>
+            <th>Spiller</th><th>Kampe</th><th>Kills</th><th>Skade</th><th>Assists</th><th>Knocks</th><th>Revives</th><th>Overlevet (min)</th><th>Headshot-andel</th><th>Længste kill (m)</th>
           </tr></thead>
           <tbody data-draw="spillere"></tbody>
         </table>
@@ -131,7 +137,7 @@
     </div>
     <div class="ds-card" id="dagsform">
       <h3 class="ds-card-title">Skade pr. kamp, spilledag for spilledag</h3>
-      <p class="ds-note">Kun dage, hvor I spillede alle fire. Nogle dage bygger på få kampe.</p>
+      <p class="ds-note">Kampene i dit valg ovenfor. Nogle dage bygger på få kampe.</p>
       <div class="ds-chart" data-draw="dagsform" data-source="match_players"></div>
     </div>
   </section>
@@ -267,10 +273,15 @@
   const fraLink = SPILLERE.find((s) => slug(s) === location.hash.slice(1));
   if (fraLink) dash.setParams({spiller: fraLink});
   const ROLL = 5;
+  const holdValg = () => dash.params().hold ?? '4';
+  const udvalg = (r) => {
+    const v = holdValg();
+    return v === 'alle' || r.antal_af_os >= Number(v) && (v !== '3' || r.mode === 'squad');
+  };
   const TOP = 10;
 
   const calc_fire = (team_matches) => {
-      const r = team_matches.filter((t) => t.antal_af_os === 4);
+      const r = team_matches.filter(udvalg);
       const n = r.length;
       return [{
         kampe: n,
@@ -306,7 +317,7 @@
 
   const calc_kort_stats = (team_matches) => {
       const m = new Map();
-      team_matches.filter((t) => t.antal_af_os === 4).forEach((t) => {
+      team_matches.filter(udvalg).forEach((t) => {
         if (!m.has(t.kort)) m.set(t.kort, []);
         m.get(t.kort).push(t);
       });
@@ -321,7 +332,7 @@
 
   const calc_spillere14 = (match_players) => {
       const m = new Map();
-      match_players.filter((p) => p.antal_af_os === 4).forEach((p) => {
+      match_players.filter(udvalg).forEach((p) => {
         if (!m.has(p.spiller)) m.set(p.spiller, []);
         m.get(p.spiller).push(p);
       });
@@ -346,7 +357,7 @@
 
   const calc_dagsform = (match_players) => {
       const m = new Map();
-      match_players.filter((p) => p.antal_af_os === 4).forEach((p) => {
+      match_players.filter(udvalg).forEach((p) => {
         const dag = new Date(p.dato).toLocaleDateString('sv-SE', {timeZone: 'Europe/Copenhagen'});
         const k = dag + '|' + p.spiller;
         if (!m.has(k)) m.set(k, {key: k, dag, spiller: p.spiller, kampe: 0, sum: 0});
@@ -433,13 +444,17 @@
   document.querySelectorAll('.ds').forEach((rod) => rod.addEventListener('click', (e) => {
     const b = e.target.closest('[data-spiller]');
     if (b) vaelg(b.dataset.spiller);
+    const h = e.target.closest('[data-hold]');
+    if (h) dash.setParams({hold: h.dataset.hold === '4' ? null : h.dataset.hold});
   }));
 
   const visPeriode = () => {
     const sp = valgtSpiller();
+    document.querySelectorAll('.ds-v').forEach((n) => { n.hidden = n.dataset.v !== holdValg(); });
+    document.querySelectorAll('[data-hold]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hold === holdValg())));
     document.querySelectorAll('#hold-side, .ds-lede').forEach((n) => { n.hidden = !!sp; });
     document.querySelectorAll('#spiller-side').forEach((n) => { n.hidden = !sp; });
-    document.querySelectorAll('.ds-tab').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.spiller || null) === sp)));
+    document.querySelectorAll('.ds-tab[data-spiller]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.spiller || null) === sp)));
     const v = valgt();
     document.querySelectorAll('#ds-fra').forEach((i) => { if (i !== document.activeElement) i.value = v ? v.fra : ''; });
     document.querySelectorAll('#ds-til').forEach((i) => { if (i !== document.activeElement) i.value = v ? v.til : ''; });
@@ -513,6 +528,7 @@
     el.replaceChildren(...rows.map((r) => {
       const tr = document.createElement('tr');
       navneCelle(tr, r.spiller);
+      celle(tr, int(r.kampe));
       c(tr, r, 'kills', d2);
       c(tr, r, 'skade', int);
       c(tr, r, 'assists', d2);
@@ -592,7 +608,7 @@
   });
 
   dash.draw('placering', (el) => {
-    const rows = hold().filter((r) => r.antal_af_os === 4).slice().reverse();
+    const rows = hold().filter(udvalg).slice().reverse();
     if (!rows.length) { el.replaceChildren(); return; }
     const W = el.clientWidth || 640;
     const H = 270;
@@ -604,7 +620,7 @@
       const u = rows.slice(Math.max(0, i - ROLL + 1), i + 1);
       return {i, v: d3.mean(u, (r) => r.placering)};
     });
-    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Placering i hver kamp med alle fire');
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Placering i hver kamp');
     svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', y(1) - 4).attr('height', y(TOP) - y(1) + 4)
       .style('fill', 'var(--cds-chart-grid)').style('opacity', .6);
     [...new Set([1, TOP, 20, maks])].filter((v) => v <= maks).forEach((v) => {
