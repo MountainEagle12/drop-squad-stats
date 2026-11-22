@@ -27,7 +27,7 @@ HEAD = """<title>DROP Squad Stats</title>
 /* HUD-agtig opstilling: smal overskriftsskrift, stille flader, amber som spillets markeringsfarve */
 :root {
   --bg: #f3f4f1; --panel: #ffffff; --fg: #1c211f; --muted: #5b6460; --line: #d9ddd8; --ok: #18794e; --warn: #9a6700; --bad: #b42318;
-  --grid: #e5e8e3; --chart-muted: #9aa39e; --s1: #b87700; --s2: #2563c9; --s3: #0e8f6e; --s4: #c4387f; --shadow: 0 4px 16px rgb(20 30 25 / .14);
+  --grid: #e5e8e3; --chart-muted: #9aa39e; --s1: #b87700; --s2: #2563c9; --s3: #0e8f6e; --s4: #c4387f; --s5: #6b4fc4; --s6: #c25a1c; --s7: #3f7d20; --s8: #8a5a00; --shadow: 0 4px 16px rgb(20 30 25 / .14);
   --font-anthropic-sans: "Barlow", "Segoe UI", system-ui, sans-serif;
   --font-anthropic-serif: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
   --cds-font-size-caption: .8125rem; --cds-font-size-body: 1rem; --cds-font-size-heading: 1.1rem; --cds-font-size-title: 2rem;
@@ -42,11 +42,11 @@ HEAD = """<title>DROP Squad Stats</title>
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #111413; --panel: #1a1e1c; --fg: #eceeea; --muted: #a0a9a4; --line: #2f3532; --ok: #5fd39b; --warn: #e8b84b; --bad: #f28b82;
-  --grid: #2a2f2c; --chart-muted: #6d7671; --s1: #f2a900; --s2: #6ea8fe; --s3: #3ccb9f; --s4: #f07cb4; --shadow: 0 4px 16px rgb(0 0 0 / .5); color-scheme: dark;
+  --grid: #2a2f2c; --chart-muted: #6d7671; --s1: #f2a900; --s2: #6ea8fe; --s3: #3ccb9f; --s4: #f07cb4; --s5: #b39dfa; --s6: #ff9a5c; --s7: #93d36b; --s8: #e0c06a; --shadow: 0 4px 16px rgb(0 0 0 / .5); color-scheme: dark;
 } }
 :root[data-theme="dark"] {
   --bg: #111413; --panel: #1a1e1c; --fg: #eceeea; --muted: #a0a9a4; --line: #2f3532; --ok: #5fd39b; --warn: #e8b84b; --bad: #f28b82;
-  --grid: #2a2f2c; --chart-muted: #6d7671; --s1: #f2a900; --s2: #6ea8fe; --s3: #3ccb9f; --s4: #f07cb4; --shadow: 0 4px 16px rgb(0 0 0 / .5); color-scheme: dark;
+  --grid: #2a2f2c; --chart-muted: #6d7671; --s1: #f2a900; --s2: #6ea8fe; --s3: #3ccb9f; --s4: #f07cb4; --s5: #b39dfa; --s6: #ff9a5c; --s7: #93d36b; --s8: #e0c06a; --shadow: 0 4px 16px rgb(0 0 0 / .5); color-scheme: dark;
 }
 body { background: var(--bg); color: var(--fg); font-family: var(--font-anthropic-sans); line-height: 1.45; }
 .ds-wrap { box-sizing: border-box; max-width: 1240px; margin-inline: auto; padding-block: 1.5rem 3rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -75,7 +75,7 @@ window.dash = (() => {
   const senere = () => { if (!ventende) { ventende = true; requestAnimationFrame(run); } };
   addEventListener('resize', senere);
   return {
-    colors: ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)'],
+    colors: ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)', 'var(--s6)', 'var(--s7)', 'var(--s8)'],
     data: (id) => ({status: 'ok', data: kilder[id] ?? [], message: '', refreshing: false, meta: []}),
     params: () => ({...params}),
     setParams: (p) => { Object.entries(p).forEach(([k, v]) => { if (v == null) delete params[k]; else params[k] = v; }); senere(); },
@@ -97,7 +97,7 @@ def main():
     markup, script = rest[:i], rest[i + len("<script>"):rest.rindex("</script>")]
 
     data = {n: json.loads((DATA / f"{n}.json").read_text(encoding="utf-8"))
-            for n in ("team_matches", "match_players", "player_stats", "meta")}
+            for n in ("team_matches", "match_players", "player_stats", "kammerater", "meta")}
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
     page = (HEAD + style + '\n<main class="ds-wrap">' + markup + "</main>\n"

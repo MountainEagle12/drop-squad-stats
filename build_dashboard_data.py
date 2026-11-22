@@ -1,7 +1,7 @@
 """Laver dashboardets datafiler ud fra data/snapshot.json og data/matches/.
 
 Kør efter fetch_stats.py:  py build_dashboard_data.py
-Output i data/dashboard/: player_stats.json, match_players.json, team_matches.json, meta.json
+Output i data/dashboard/: player_stats.json, match_players.json, team_matches.json, kammerater.json, meta.json
 """
 import json
 import pathlib
@@ -68,7 +68,7 @@ def make(scope, scope_label, mode, mode_label, name, st, longest):
 
 
 def match_rows():
-    players, teams = [], []
+    players, teams, mates = [], [], []
     skipped = 0
     for f in sorted((DATA / "matches").glob("*.json")):
         m = json.loads(f.read_text(encoding="utf-8"))
@@ -92,12 +92,13 @@ def match_rows():
                 "tilstand": MODES.get(a["gameMode"], a["gameMode"]), "mode": a["gameMode"],
                 "placering": rank, "hold_i_alt": len(rosters), "vundet": won,
                 "antal_af_os": len(ours), "spillere": ", ".join(lineup),
+                "hold": ", ".join(sorted(s["name"] for s in members)),
                 "hold_kills": sum(s["kills"] for s in members),
                 "hold_skade": round(sum(s["damageDealt"] for s in members)),
                 "varighed_min": round(a["duration"] / 60),
             })
-            for s in ours:
-                players.append({
+            for s in members:
+                (players if s["name"] in PLAYERS else mates).append({
                     "key": f"{mid}|{s['name']}", "match": mid, "dato": a["createdAt"],
                     "kort": MAPS.get(a["mapName"], a["mapName"]), "mode": a["gameMode"],
                     "spiller": s["name"], "placering": rank, "vundet": won, "antal_af_os": len(ours),
@@ -109,15 +110,16 @@ def match_rows():
                 })
     teams.sort(key=lambda r: r["dato"], reverse=True)
     players.sort(key=lambda r: r["dato"], reverse=True)
-    return players, teams, skipped
+    mates.sort(key=lambda r: r["dato"], reverse=True)
+    return players, teams, mates, skipped
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     snapshot = json.loads((DATA / "snapshot.json").read_text(encoding="utf-8"))
     stats = player_rows(snapshot)
-    players, teams, skipped = match_rows()
-    for name, rows in (("player_stats", stats), ("match_players", players), ("team_matches", teams)):
+    players, teams, mates, skipped = match_rows()
+    for name, rows in (("player_stats", stats), ("match_players", players), ("team_matches", teams), ("kammerater", mates)):
         (OUT / f"{name}.json").write_text(json.dumps(rows, ensure_ascii=False, indent=0), encoding="utf-8")
     meta = [{
         "hentet": snapshot["fetchedAt"], "saeson": snapshot["season"],

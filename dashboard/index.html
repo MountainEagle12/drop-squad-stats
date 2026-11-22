@@ -50,6 +50,8 @@
   .ds-link { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
   .ds-filter { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
   .ds-filter-label { align-self: center; min-width: 7.5rem; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ds-chips { display: contents; }
+  .ds-search { min-width: 0; flex: 1 1 12rem; max-width: 20rem; }
   .ds-tile-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
   .ds-details { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
   .ds-details summary { cursor: pointer; }
@@ -98,9 +100,17 @@
         <button class="ds-tab" type="button" data-med="StrawberryBuun" aria-pressed="true">StrawberryBuun</button>
         <button class="ds-tab" type="button" data-med="Abilden" aria-pressed="true">Abilden</button>
         <button class="ds-tab" type="button" data-med="MountainEagle_12" aria-pressed="true">MountainEagle_12</button>
+        <span class="ds-chips" data-draw="kammerat-chips" data-source="kammerater"></span>
       </div>
+      <div class="ds-tabs">
+        <label class="ds-filter-label" for="ds-kammerat">Tilføj holdkammerat</label>
+        <input class="ds-input ds-search" id="ds-kammerat" type="search" list="ds-kammerat-liste" placeholder="Søg navn" autocomplete="off">
+        <datalist id="ds-kammerat-liste" data-draw="kammerat-liste" data-source="kammerater"></datalist>
+        <button class="ds-input ds-reset ds-tilfoej" type="button">Tilføj</button>
+      </div>
+      <p class="ds-note ds-ukendt" hidden>Navnet er ikke fundet blandt jeres holdkammerater. Vælg et navn fra listen.</p>
     </div>
-    <p class="ds-note">Viser kampe, hvor alle markerede spillere var på samme hold, også hvis andre var med. Marker én spiller for at se kun den spillers kampe, eller fjern alle markeringer for at se alle kampe. Placeringer i solo, duo og squad kan ikke sammenlignes direkte.</p>
+    <p class="ds-note">Viser kampe, hvor alle markerede spillere var på samme hold, også hvis andre var med. Holdkammerater er spillere, der har været på hold med mindst én af jer. Marker én spiller for at se kun den spillers kampe, eller fjern alle markeringer for at se alle kampe. Placeringer i solo, duo og squad kan ikke sammenlignes direkte.</p>
     <div class="ds-tiles">
       <div class="ds-tile"><span class="ds-tile-label">Kampe</span><span class="ds-tile-value" data-draw="t-kampe" data-source="team_matches">—</span></div>
       <div class="ds-tile"><span class="ds-tile-label">Wins</span><span class="ds-tile-value" data-draw="t-wins" data-source="team_matches">—</span></div>
@@ -294,7 +304,7 @@
   const holdOK = (t) => {
     const tv = tilstandValg();
     const med = medValg();
-    const paa = t.spillere.split(', ');
+    const paa = (t.hold ?? t.spillere).split(', ');
     return (tv === 'alle' || t.mode.startsWith(tv)) && med.every((s) => paa.includes(s));
   };
   let kampCache = {key: null, ids: null};
@@ -311,6 +321,29 @@
     const med = medValg();
     return valgteKampe().has(r.match) && (med.length === 0 || med.includes(r.spiller));
   };
+  const saetMed = (ny) => {
+    const standard = ny.length === SPILLERE.length && SPILLERE.every((s) => ny.includes(s));
+    dash.setParams({med: standard ? null : ny.join(',')});
+  };
+  const kammeratNavne = () => {
+    const c = d3.rollup(raekker('kammerater'), (v) => new Set(v.map((r) => r.match)).size, (r) => r.spiller);
+    return [...c].sort((a, b) => b[1] - a[1] || d3.ascending(a[0], b[0]));
+  };
+  const kammeratRaekker = () => iPeriode(raekker('kammerater')).filter((r) => medValg().includes(r.spiller) && valgteKampe().has(r.match));
+  const tilfoejKammerat = () => {
+    document.querySelectorAll('#ds-kammerat').forEach((i) => {
+      const navn = kammeratNavne().map(([n]) => n).find((n) => n.toLowerCase() === i.value.trim().toLowerCase());
+      document.querySelectorAll('.ds-ukendt').forEach((n) => { n.hidden = !i.value.trim() || !!navn; });
+      if (!navn) return;
+      if (!medValg().includes(navn)) saetMed([...medValg(), navn]);
+      i.value = '';
+    });
+  };
+  document.querySelectorAll('.ds-tilfoej').forEach((b) => b.addEventListener('click', tilfoejKammerat));
+  document.querySelectorAll('#ds-kammerat').forEach((i) => {
+    i.addEventListener('keydown', (e) => { if (e.key === 'Enter') tilfoejKammerat(); });
+    i.addEventListener('change', () => { if (kammeratNavne().some(([n]) => n === i.value)) tilfoejKammerat(); });
+  });
   const valgTekst = () => {
     const ord = {alle: 'Alle kampe', squad: 'Squad', duo: 'Duo', solo: 'Solo'}[tilstandValg()];
     const med = medValg();
@@ -432,7 +465,7 @@
   const hold = () => iPeriode(raekker('team_matches'));
   const spillerRaekker = () => iPeriode(raekker('match_players'));
   const fire = () => calc_fire(hold());
-  const spillere14 = () => calc_spillere14(spillerRaekker());
+  const spillere14 = () => calc_spillere14([...spillerRaekker(), ...kammeratRaekker()]);
 
   const vaerdi = (navn, hent, felt, fmt) => dash.draw(navn, (el) => {
     const r = hent()[0];
@@ -450,6 +483,21 @@
   vaerdi('fra', () => [valgt() ?? {}], 'fra', dagsTekst);
   vaerdi('til', () => [valgt() ?? {}], 'til', dagsTekst);
   vaerdi('hentet', () => raekker('meta'), 'hentet', datoTid);
+  dash.draw('kammerat-chips', (el) => {
+    el.replaceChildren(...medValg().filter((s) => !SPILLERE.includes(s)).map((s) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ds-tab';
+      b.dataset.med = s;
+      b.setAttribute('aria-pressed', 'true');
+      b.setAttribute('aria-label', `Fjern ${s}`);
+      b.textContent = `${s} ×`;
+      return b;
+    }));
+  });
+  dash.draw('kammerat-liste', (el) => {
+    el.replaceChildren(...kammeratNavne().map(([n, k]) => new Option(`${k} ${k === 1 ? 'kamp' : 'kampe'} med jer`, n)));
+  });
   dash.draw('valg-tekst', (el) => { el.textContent = valgTekst(); });
   vaerdi('top-spiller', spillere14, 'spiller', (v) => v);
 
@@ -488,11 +536,7 @@
     const tb = e.target.closest('[data-tilstand]');
     if (tb) dash.setParams({tilstand: tb.dataset.tilstand === 'alle' ? null : tb.dataset.tilstand});
     const mb = e.target.closest('[data-med]');
-    if (mb) {
-      const s = mb.dataset.med;
-      const ny = medValg().includes(s) ? medValg().filter((x) => x !== s) : SPILLERE.filter((x) => x === s || medValg().includes(x));
-      dash.setParams({med: ny.length === SPILLERE.length ? null : ny.join(',')});
-    }
+    if (mb) saetMed(medValg().includes(mb.dataset.med) ? medValg().filter((x) => x !== mb.dataset.med) : [...medValg(), mb.dataset.med]);
   }));
 
   const visPeriode = () => {
@@ -574,7 +618,7 @@
     const c = (tr, r, f, fmt) => celle(tr, fmt(r[f]), r[f] === bedst(f) ? 'ds-best' : '');
     el.replaceChildren(...rows.map((r) => {
       const tr = document.createElement('tr');
-      navneCelle(tr, r.spiller);
+      if (SPILLERE.includes(r.spiller)) navneCelle(tr, r.spiller); else celle(tr, r.spiller);
       celle(tr, int(r.kampe));
       c(tr, r, 'kills', d2);
       c(tr, r, 'skade', int);
@@ -601,7 +645,7 @@
     el.replaceChildren(...rows.map((r) => {
       const tr = document.createElement('tr');
       tr.dataset.key = r.key;
-      navneCelle(tr, r.spiller);
+      if (SPILLERE.includes(r.spiller)) navneCelle(tr, r.spiller); else celle(tr, r.spiller);
       celle(tr, int(r.kampe));
       celle(tr, d2(r.kd));
       celle(tr, d1(r.adr));
@@ -699,7 +743,7 @@
   });
 
   dash.draw('dagsform', (el) => {
-    const rows = calc_dagsform(spillerRaekker());
+    const rows = calc_dagsform([...spillerRaekker(), ...kammeratRaekker()]);
     if (!rows.length) { el.replaceChildren(); return; }
     const W = el.clientWidth || 640;
     const H = 240;
@@ -707,10 +751,11 @@
     const dage = [...new Set(rows.map((r) => r.dag))];
     const x = d3.scalePoint(dage, [m.l, W - m.r]);
     const y = d3.scaleLinear([0, d3.max(rows, (r) => r.skade_pr_kamp)], [H - m.b, m.t]).nice();
-    const farve = (s) => dash.colors[SPILLERE.indexOf(s)];
+    const navne = [...SPILLERE, ...medValg().filter((s) => !SPILLERE.includes(s))];
+    const farve = (s) => dash.colors[navne.indexOf(s) % dash.colors.length];
     const legend = document.createElement('div');
     legend.className = 'ds-legend';
-    SPILLERE.filter((s) => rows.some((p) => p.spiller === s)).forEach((s) => {
+    navne.filter((s) => rows.some((p) => p.spiller === s)).forEach((s) => {
       const e = document.createElement('span');
       const p = document.createElement('i');
       p.className = 'ds-swatch';
@@ -728,7 +773,7 @@
       if (i % trin) return;
       svg.append('text').attr('class', 'ds-tick').attr('x', x(d)).attr('y', H - 6).attr('text-anchor', i ? 'middle' : 'start').text(datoKort(d + 'T12:00:00Z'));
     });
-    SPILLERE.forEach((s) => {
+    navne.forEach((s) => {
       const r = rows.filter((p) => p.spiller === s);
       svg.append('path').datum(r).attr('fill', 'none').attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
         .style('stroke', farve(s)).attr('d', d3.line().x((p) => x(p.dag)).y((p) => y(p.skade_pr_kamp)));
