@@ -1,19 +1,12 @@
 {
- "fetchedAt": "2026-11-21T23:45:31+00:00",
+ "fetchedAt": "2026-11-22T06:30:13+00:00",
  "season": "division.bro.official.pc-2018-44",
  "players": {
   "El-Champo": {
    "id": "account.b85e5bd4e9c74b87a384cf0408ff49b2",
    "clanId": "clan.196166102ac848b9b87449f986dfab4f",
    "banType": "Innocent",
-   "matchIds": [
-    "0b6b368e-0939-41b8-bdab-e7303e17ba4a",
-    "f54d8b54-8861-44ca-b4e4-e7e8ffbd1e4b",
-    "462f1f6e-0902-4713-8c7c-b433b178d59c",
-    "c90ce4b2-b029-44ea-93c6-9156a6ae6265",
-    "061d00b3-4732-48d8-bc0f-a66ed6ce7eeb",
-    "60589774-ff62-4ebf-a256-ca7f92f21b95"
-   ],
+   "matchIds": [],
    "lifetime": {
     "duo": {
      "assists": 2,
@@ -468,15 +461,7 @@
    "id": "account.1c16266473ac4965a68f5557511f23e3",
    "clanId": "",
    "banType": "Innocent",
-   "matchIds": [
-    "0b6b368e-0939-41b8-bdab-e7303e17ba4a",
-    "f54d8b54-8861-44ca-b4e4-e7e8ffbd1e4b",
-    "462f1f6e-0902-4713-8c7c-b433b178d59c",
-    "c90ce4b2-b029-44ea-93c6-9156a6ae6265",
-    "061d00b3-4732-48d8-bc0f-a66ed6ce7eeb",
-    "60589774-ff62-4ebf-a256-ca7f92f21b95",
-    "30613699-f404-4ec2-9b8f-f7231159945a"
-   ],
+   "matchIds": [],
    "lifetime": {
     "duo": {
      "assists": 3,
@@ -931,19 +916,7 @@
    "id": "account.442eaf0e54984c8d97cede478ab85812",
    "clanId": "clan.196166102ac848b9b87449f986dfab4f",
    "banType": "Innocent",
-   "matchIds": [
-    "0b6b368e-0939-41b8-bdab-e7303e17ba4a",
-    "f54d8b54-8861-44ca-b4e4-e7e8ffbd1e4b",
-    "462f1f6e-0902-4713-8c7c-b433b178d59c",
-    "c90ce4b2-b029-44ea-93c6-9156a6ae6265",
-    "061d00b3-4732-48d8-bc0f-a66ed6ce7eeb",
-    "60589774-ff62-4ebf-a256-ca7f92f21b95",
-    "30613699-f404-4ec2-9b8f-f7231159945a",
-    "ba302055-52e9-4c76-9cad-a1c56cd88c63",
-    "51d1b9e3-e634-40ef-a7ff-53bc1ccda9bb",
-    "6b2e7779-e6f9-435a-b33d-9434e70349b9",
-    "20ac09fd-9b6b-4743-b6e0-9ed2ce9a8248"
-   ],
+   "matchIds": [],
    "lifetime": {
     "duo": {
      "assists": 2,
@@ -1399,13 +1372,7 @@
    "clanId": "",
    "banType": "Innocent",
    "matchIds": [
-    "2d49ad4c-7fbd-4882-b676-c3ad749e3467",
-    "0b6b368e-0939-41b8-bdab-e7303e17ba4a",
-    "f54d8b54-8861-44ca-b4e4-e7e8ffbd1e4b",
-    "462f1f6e-0902-4713-8c7c-b433b178d59c",
-    "c90ce4b2-b029-44ea-93c6-9156a6ae6265",
-    "061d00b3-4732-48d8-bc0f-a66ed6ce7eeb",
-    "60589774-ff62-4ebf-a256-ca7f92f21b95"
+    "2d49ad4c-7fbd-4882-b676-c3ad749e3467"
    ],
    "lifetime": {
     "duo": {
